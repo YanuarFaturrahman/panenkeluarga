@@ -1,0 +1,70 @@
+@tailwindcss base;
+@tailwindcss components;
+@tailwindcss utilities;
+
+:root {
+    --pk-dark: #214332;
+    --pk-dark-2: #17372d;
+    --pk-green: #538253;
+    --pk-green-soft: #e9f2e5;
+    --pk-cream: #f1f3e9;
+    --pk-orange: #e07a5f;
+    --pk-orange-soft: #fff2ee;
+    --pk-gray: #6b7280;
+    --pk-border: rgba(33, 67, 50, 0.12);
+}
+
+body {
+    background: var(--pk-cream);
+    color: var(--pk-dark);
+}
+
+.pk-card {
+    @apply rounded-2xl border border-[var(--pk-border)] bg-white shadow-sm;
+}
+
+.pk-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-[#538253] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#446f43];
+}
+
+.pk-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-[#dfe7df] bg-white px-4 py-2.5 text-sm font-semibold text-[#214332] transition hover:bg-[#f5f8f4];
+}
+
+.pk-input {
+    @apply w-full rounded-xl border border-[#dfe5df] bg-white px-3.5 py-2.5 text-sm text-[#214332] outline-none transition focus:border-[#214332] focus:ring-2 focus:ring-[#214332]/10;
+}
+
+.pk-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium;
+}
+
+.pk-stat {
+    @apply rounded-2xl border border-[#dfe5df] bg-white p-4 shadow-sm;
+}
+
+.pk-stat-value {
+    @apply mt-2 text-2xl font-bold tracking-tight text-[#214332];
+}
+
+.pk-main-shell {
+    @apply min-h-screen bg-[#f1f3e9] text-[#214332];
+}
+
+.pk-page-title {
+    @apply font-serif text-3xl font-semibold leading-tight text-[#214332];
+}
+
+.pk-section-title {
+    @apply font-serif text-xl font-semibold text-[#214332];
+}
+
+.text-muted {
+    @apply text-sm text-[#6b7280];
+}
+
+.grid-hero {
+    background-image:
+        radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 32%);
+}
