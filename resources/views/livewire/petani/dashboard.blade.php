@@ -1,6 +1,6 @@
 <div>
-    <x-slot:header>Dashboard Petani</x-slot:header>
-    <x-slot:subheader>Selamat datang kembali, Pak Slamet</x-slot:subheader>
+    <x-slot:header>Dashboard</x-slot:header>
+    <x-slot:subheader>Selamat datang kembali, {{ auth()->user()->name ?? 'Petani' }}</x-slot:subheader>
 
     <!-- Stat Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
@@ -47,7 +47,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50">
                             <th class="px-6 py-3 text-left text-gray-600 font-semibold">KOMODITAS</th>
-                            <th class="px-6 py-3 text-left text-gray-600 font-semibold">KUOTA</th>
+                            <th class="px-6 py-3 text-left text-gray-600 font-semibold">KUOTA PESERTA</th>
                             <th class="px-6 py-3 text-left text-gray-600 font-semibold">STATUS</th>
                         </tr>
                     </thead>
@@ -59,29 +59,37 @@
                                     <p class="text-xs text-gray-500">{{ $p->konsumen?->name ?? 'Pembeli' }}</p>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <p class="font-medium text-gray-800">{{ $p->jumlah_pesanan ?? 0 }}/{{ $p->sesi?->kuota_minimum ?? 0 }} keluarga</p>
+                                    @php
+                                        // Hitung jumlah keluarga/peserta unik yang bergabung di sesi ini
+                                        $jumlahKeluarga = $p->sesi?->peserta?->count() ?? 0;
+                                        $targetKuota = $p->sesi?->kuota_minimum ?? 1;
+                                        $persentase = $targetKuota > 0 ? (int)round(($jumlahKeluarga / $targetKuota) * 100) : 0;
+                                    @endphp
+                                    <p class="font-medium text-gray-800">{{ $jumlahKeluarga }}/{{ $targetKuota }} keluarga</p>
                                     <div class="w-24 h-2 bg-gray-200 rounded-full mt-1 overflow-hidden">
-                                        @php
-                                            $persentase = $p->sesi?->kuota_minimum > 0 
-                                                ? (int)round(($p->jumlah_pesanan / $p->sesi?->kuota_minimum) * 100)
-                                                : 0;
-                                        @endphp
                                         <div class="h-full bg-emerald-500" style="width: {{ min(100, $persentase) }}%"></div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
+                                    @php
+                                        $statusStr = strtolower($p->status ?? '');
+                                    @endphp
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        @if ($p->status === 'menunggu')
-                                            bg-yellow-100 text-yellow-800
-                                        @elseif ($p->status === 'dikonfirmasi')
+                                        @if ($statusStr === 'menunggu_kuota' || $statusStr === 'menunggu')
+                                            bg-amber-100 text-amber-800
+                                        @elseif ($statusStr === 'dikonfirmasi' || $statusStr === 'terpenuhi')
                                             bg-emerald-100 text-emerald-800
-                                        @elseif ($p->status === 'selesai')
+                                        @elseif ($statusStr === 'selesai')
                                             bg-blue-100 text-blue-800
                                         @else
                                             bg-gray-100 text-gray-800
                                         @endif
                                     ">
-                                        {{ ucfirst($p->status ?? '-') }}
+                                        @if ($statusStr === 'menunggu_kuota' || $statusStr === 'menunggu')
+                                            Menunggu Kuota
+                                        @else
+                                            {{ str_replace('_', ' ', ucwords($statusStr, '_')) }}
+                                        @endif
                                     </span>
                                 </td>
                             </tr>
@@ -98,27 +106,47 @@
         </div>
 
         <!-- Pendapatan 7 Hari Terakhir -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="font-semibold text-gray-800 mb-6">Pendapatan 7 Hari Terakhir</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
+            <h3 class="font-semibold text-gray-800 mb-4">Pendapatan 7 Hari Terakhir</h3>
             
-            <div class="flex items-end justify-between h-48 gap-2">
-                @php
-                    $maxPendapatan = max($pendapatan7Hari ?? [1]);
-                    $hari = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-                @endphp
+            @php
+                $values = array_values($pendapatan7Hari ?? []);
+                $maxPendapatan = !empty($values) ? max($values) : 0;
+            @endphp
 
-                @foreach ($pendapatan7Hari ?? [] as $index => $jumlah)
-                    <div class="flex flex-col items-center gap-2 flex-1">
-                        <div class="w-full bg-emerald-100 rounded-t-lg overflow-hidden" style="height: {{ ($maxPendapatan > 0 ? ($jumlah / $maxPendapatan) * 100 : 10) }}%">
-                            <div class="w-full h-full bg-emerald-500 hover:bg-emerald-600 transition" title="Rp{{ number_format($jumlah, 0, ',', '.') }}"></div>
+            <!-- Area Grafik Batang -->
+            <div class="flex items-end justify-between h-52 gap-2 pt-6 pb-2 px-1">
+                @foreach ($pendapatan7Hari ?? [] as $hari => $jumlah)
+                    @php
+                        $heightPercent = $maxPendapatan > 0 ? round(($jumlah / $maxPendapatan) * 100) : 0;
+                        if ($jumlah > 0 && $heightPercent < 8) {
+                            $heightPercent = 8;
+                        }
+                    @endphp
+                    <div class="flex flex-col items-center h-full justify-end flex-1 group relative">
+                        <!-- Tooltip Nilai Rupiah saat Hover -->
+                        <div class="absolute -top-8 hidden group-hover:flex flex-col items-center z-10">
+                            <span class="bg-gray-800 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap shadow-md">
+                                Rp{{ number_format($jumlah, 0, ',', '.') }}
+                            </span>
+                            <div class="w-1.5 h-1.5 bg-gray-800 rotate-45 -mt-1"></div>
                         </div>
-                        <p class="text-xs text-gray-600 font-medium">{{ $index }}</p>
+
+                        <!-- Bar Container -->
+                        <div class="w-full bg-gray-100 rounded-t-lg h-full flex items-end overflow-hidden">
+                            <div class="w-full bg-emerald-500 group-hover:bg-emerald-600 transition-all duration-300 rounded-t-lg"
+                                 style="height: {{ $jumlah > 0 ? $heightPercent : 4 }}%; opacity: {{ $jumlah > 0 ? '1' : '0.3' }};">
+                            </div>
+                        </div>
+
+                        <!-- Label Hari -->
+                        <p class="text-xs text-gray-600 font-medium mt-2">{{ $hari }}</p>
                     </div>
                 @endforeach
             </div>
 
-            <div class="mt-6 text-xs text-gray-500">
-                <p class="text-center">Total: <span class="font-semibold text-gray-800">Rp{{ number_format(array_sum($pendapatan7Hari ?? []), 0, ',', '.') }}</span></p>
+            <div class="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500 text-center">
+                <p>Total: <span class="font-semibold text-gray-800">Rp{{ number_format(array_sum($pendapatan7Hari ?? []), 0, ',', '.') }}</span></p>
             </div>
         </div>
     </div>

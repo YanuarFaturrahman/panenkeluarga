@@ -15,19 +15,34 @@ class Beranda extends Component
     {
         $user = auth()->user();
 
-        // Ambil sesi group buying aktif di wilayah user secara aman
+        // Ambil ID wilayah user (fleksibel mendukung kolom wilayah_id maupun relasi village)
+        $wilayahId = $user?->wilayah_id ?? $user?->village_id ?? null;
+
+        // Ambil sesi group buying aktif
         try {
-            $sesiAktif = SesiGroupBuying::with('produk', 'produk.petani')
-                ->where('wilayah_id', $user?->wilayah_id)
-                ->where('status', 'berjalan')
-                ->latest()
-                ->take(3)
-                ->get();
+            $query = SesiGroupBuying::with(['produk', 'produk.petani', 'wilayah'])
+                ->where('status', 'berjalan');
+
+            // Jika user memiliki wilayah_id, filter berdasarkan wilayah user
+            if ($wilayahId) {
+                $query->where('wilayah_id', $wilayahId);
+            }
+
+            $sesiAktif = $query->latest()->take(6)->get();
+
+            // Jika tidak ada sesi di wilayah spesifik user, tampilkan sesi aktif umum/semua wilayah
+            if ($sesiAktif->isEmpty()) {
+                $sesiAktif = SesiGroupBuying::with(['produk', 'produk.petani', 'wilayah'])
+                    ->where('status', 'berjalan')
+                    ->latest()
+                    ->take(6)
+                    ->get();
+            }
         } catch (Throwable $e) {
             $sesiAktif = collect();
         }
 
-        // Ambil total subsidi bulan ini secara aman
+        // Ambil total alokasi subsidi bulan ini
         try {
             $totalSubsidiBulanIni = SubsidiNutrisi::whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)

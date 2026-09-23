@@ -1,5 +1,5 @@
 <div>
-    <x-slot:header>Dashboard Admin</x-slot:header>
+    <x-slot:header>Dashboard</x-slot:header>
     <x-slot:subheader>Ringkasan operasional platform</x-slot:subheader>
 
     <!-- Kartu Statistik (4 Kolom) -->
@@ -8,28 +8,24 @@
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-gray-500 mb-1">Total Petani Mitra</p>
             <h3 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($totalPetani) }}</h3>
-            <p class="text-xs font-semibold text-emerald-600">+{{ $petaniBulanIni }} bulan ini</p>
         </div>
 
         <!-- Card 2: Total Koordinator -->
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-gray-500 mb-1">Total Koordinator</p>
             <h3 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($totalKoordinator) }}</h3>
-            <p class="text-xs font-semibold text-emerald-600">di {{ $totalKecamatan }} kecamatan</p>
         </div>
 
         <!-- Card 3: Transaksi Bulan Ini -->
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-gray-500 mb-1">Transaksi Bulan Ini</p>
             <h3 class="text-3xl font-bold text-gray-800 mb-2">{{ number_format($transaksiBulanIni) }}</h3>
-            <p class="text-xs font-semibold text-emerald-600">Rp{{ number_format($gmvBulanIni / 1000000, 1, ',', '.') }} juta GMV</p>
         </div>
 
         <!-- Card 4: Surplus Terkumpul -->
         <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <p class="text-xs font-semibold text-gray-500 mb-1">Surplus Terkumpul</p>
             <h3 class="text-3xl font-bold text-gray-800 mb-2">Rp{{ number_format($surplusTerkumpul, 0, ',', '.') }}</h3>
-            <p class="text-xs font-semibold text-emerald-600">untuk subsidi nutrisi</p>
         </div>
     </div>
 
@@ -96,7 +92,7 @@
                         @foreach($trenMingguan as $index => $count)
                             <span class="flex-1 text-[10px] text-gray-400 font-medium">
                                 @if($index === 11)
-                                    <strong class="text-emerald-700 font-bold">M Ini</strong>
+                                    <strong class="text-gray-700 font-bold">M Ini</strong>
                                 @else
                                     M{{ $index + 1 }}
                                 @endif

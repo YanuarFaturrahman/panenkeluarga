@@ -4,32 +4,34 @@ namespace App\Livewire\Admin;
 
 use App\Models\Transaksi;
 use App\Models\User;
+use App\Models\SesiGroupBuying;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Throwable;
 
 class Laporan extends Component
 {
-    // Menggunakan bulanPilihan sesuai select di view (format "YYYY-MM")
-    public $bulanPilihan = '2026-08'; 
+    public $bulanPilihan; 
     public $bulan;
     public $tahun;
 
     public function mount()
     {
+        $this->bulanPilihan = now()->format('Y-m');
         $this->parseBulanPilihan();
     }
 
-    // Update otomatis saat dropdown diganti di view
     public function updatedBulanPilihan($value)
     {
         $this->parseBulanPilihan();
+
+        // Ambil data grafik terbaru lalu kirim event ke frontend JavaScript
+        $grafikData = $this->getGrafikData();
+        $this->dispatch('updateChart', $grafikData);
     }
 
     private function parseBulanPilihan()
     {
-        // Memecah "2026-08" menjadi tahun dan bulan terpisah
         if ($this->bulanPilihan && str_contains($this->bulanPilihan, '-')) {
             [$this->tahun, $this->bulan] = explode('-', $this->bulanPilihan);
         } else {
@@ -38,7 +40,28 @@ class Laporan extends Component
         }
     }
 
-    // Aksi Download PDF
+    private function getGrafikData()
+    {
+        $grafikData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $bulanNama = ucfirst($date->translatedFormat('M')); 
+            $m = $date->format('m');
+            $y = $date->format('Y');
+
+            $gmvBulanIni = Transaksi::whereMonth('created_at', $m)
+                ->whereYear('created_at', $y)
+                ->sum('jumlah_bayar');
+
+            $grafikData[] = [
+                'bulan' => $bulanNama,
+                'gmv'   => (float) $gmvBulanIni
+            ];
+        }
+
+        return $grafikData;
+    }
+
     public function eksporPdf()
     {
         $this->parseBulanPilihan();
@@ -52,11 +75,11 @@ class Laporan extends Component
         $surplusSubsidi = $transaksi->sum('alokasi_subsidi');
 
         $pdf = Pdf::loadView('pdf.laporan-bulanan', [
-            'bulan' => $this->bulan,
-            'tahun' => $this->tahun,
-            'transaksi' => $transaksi,
+            'bulan'          => $this->bulan,
+            'tahun'          => $this->tahun,
+            'transaksi'      => $transaksi,
             'totalTransaksi' => $totalTransaksi,
-            'totalGmv' => $totalGmv,
+            'totalGmv'       => $totalGmv,
             'surplusSubsidi' => $surplusSubsidi,
         ]);
 
@@ -67,7 +90,6 @@ class Laporan extends Component
         }, $fileName);
     }
 
-    // Aksi Download Excel/CSV
     public function eksporExcel()
     {
         $this->parseBulanPilihan();
@@ -88,14 +110,10 @@ class Laporan extends Component
 
         $callback = function () use ($transaksi) {
             $file = fopen('php://output', 'w');
-            
-            // BOM untuk UTF-8 agar Excel membuka karakter dengan benar
             fputs($file, "\xEF\xBB\xBF");
 
-            // Header Tabel
             fputcsv($file, ['ID Transaksi', 'Kode Transaksi', 'Jumlah Bayar (Rp)', 'Alokasi Subsidi (Rp)', 'Metode Bayar', 'Status', 'Tanggal']);
 
-            // Baris Data
             foreach ($transaksi as $item) {
                 fputcsv($file, [
                     $item->id,
@@ -119,41 +137,44 @@ class Laporan extends Component
     {
         $this->parseBulanPilihan();
 
+        // 1. Data Ringkasan Bulan Ini
         $transaksi = Transaksi::whereMonth('created_at', $this->bulan)
             ->whereYear('created_at', $this->tahun)
             ->get();
 
         $totalTransaksi = $transaksi->count();
-        $totalGmv = $transaksi->sum('jumlah_bayar');
+        $totalGmv       = $transaksi->sum('jumlah_bayar');
         $surplusSubsidi = $transaksi->sum('alokasi_subsidi');
-        $petaniAktif = User::whereIn('peran', ['petani', 'Petani'])->count();
+        
+        $petaniAktif      = User::whereIn('peran', ['petani', 'Petani'])->count();
         $koordinatorAktif = User::whereIn('peran', ['koordinator', 'Koordinator'])->count();
 
-        // --- MENGAMBIL DATA GRAFIK DARI DATABASE (6 BULAN TERAKHIR) ---
-        $grafikData = [];
-        for ($i = 5; $i >= 0; $i--) {
+        // 2. Opsi Periode Bulan (6 Bulan Terakhir)
+        $opsiBulan = [];
+        for ($i = 0; $i < 6; $i++) {
             $date = now()->subMonths($i);
-            
-            // Menggunakan format 3 huruf untuk nama bulan (Jan, Feb, Mar, dst)
-            $bulanNama = ucfirst($date->translatedFormat('M')); 
-            $m = $date->format('m');
-            $y = $date->format('Y');
-
-            $gmvBulanIni = Transaksi::whereMonth('created_at', $m)
-                ->whereYear('created_at', $y)
-                ->sum('jumlah_bayar');
-
-            $grafikData[] = [
-                'bulan' => $bulanNama,
-                'gmv' => $gmvBulanIni
+            $opsiBulan[] = [
+                'value' => $date->format('Y-m'),
+                'label' => $date->translatedFormat('F Y')
             ];
         }
-        // -------------------------------------------------------------
 
-        $kinerjaWilayah = [
-            ['nama' => 'Kecamatan Sukamaju', 'sesi' => 12, 'peserta' => 140, 'gmv' => 4500000, 'pertumbuhan' => '+15%'],
-            ['nama' => 'Kecamatan Makmur', 'sesi' => 8, 'peserta' => 95, 'gmv' => 3100000, 'pertumbuhan' => '+8%'],
-        ];
+        // 3. Data Grafik
+        $grafikData = $this->getGrafikData();
+
+        // 4. Data Kinerja per Wilayah
+        $totalSesi     = SesiGroupBuying::count();
+        $totalPeserta  = $transaksi->pluck('user_id')->filter()->unique()->count();
+
+        $kinerjaWilayah = [];
+        if ($totalTransaksi > 0 || $totalSesi > 0) {
+            $kinerjaWilayah[] = [
+                'nama'    => 'Kecamatan Subang',
+                'sesi'    => $totalSesi,
+                'peserta' => $totalPeserta > 0 ? $totalPeserta : $totalTransaksi,
+                'gmv'     => $totalGmv,
+            ];
+        }
 
         return view('livewire.admin.laporan', [
             'totalTransaksi'   => $totalTransaksi,
@@ -163,6 +184,7 @@ class Laporan extends Component
             'koordinatorAktif' => $koordinatorAktif,
             'kinerjaWilayah'   => $kinerjaWilayah,
             'grafikData'       => $grafikData,
+            'opsiBulan'        => $opsiBulan,
         ]);
     }
 }

@@ -41,6 +41,7 @@
             @endif
 
             <form wire:submit="register" enctype="multipart/form-data" class="space-y-4">
+                <!-- Pilihan Peran -->
                 <div>
                     <label class="block text-xs font-bold text-[#214332] mb-2">Saya mendaftar sebagai</label>
                     <div class="grid grid-cols-3 gap-2">
@@ -56,6 +57,7 @@
                     </div>
                 </div>
 
+                <!-- Nama Lengkap & Identitas -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-[#214332] mb-1">Nama Lengkap</label>
@@ -69,44 +71,55 @@
                     </div>
                 </div>
 
-                <!-- Input Dropdown Wilayah Domisili (Kecamatan Cibogo, Kab. Subang) -->
-                <div>
-                    <label class="block text-xs font-bold text-[#214332] mb-1">Wilayah Domisili (Kec. Cibogo, Kab. Subang)</label>
-                    <select wire:model="wilayah_id" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm text-gray-700">
-                        <option value="">-- Pilih Wilayah Domisili --</option>
-                        
-                        @if(isset($this->wilayahList) && count($this->wilayahList) > 0)
-                            @foreach ($this->wilayahList as $wilayah)
-                                <option value="{{ $wilayah->id }}">RT {{ $wilayah->nama_rt }} / RW {{ $wilayah->nama_rw }} — Desa {{ $wilayah->kelurahan ?? $wilayah->desa }}</option>
-                            @endforeach
-                        @else
-                            <!-- DATA DUMMY KECAMATAN CIBOGO, SUBANG -->
-                            <optgroup label="Desa Cibogo">
-                                <option value="1">RT 01 / RW 01 — Desa Cibogo, Kec. Cibogo</option>
-                                <option value="2">RT 02 / RW 01 — Desa Cibogo, Kec. Cibogo</option>
-                                <option value="3">RT 03 / RW 02 — Desa Cibogo, Kec. Cibogo</option>
-                                <option value="4">RT 04 / RW 02 — Desa Cibogo, Kec. Cibogo</option>
-                            </optgroup>
-                            <optgroup label="Desa Padaasih">
-                                <option value="5">RT 01 / RW 01 — Desa Padaasih, Kec. Cibogo</option>
-                                <option value="6">RT 02 / RW 01 — Desa Padaasih, Kec. Cibogo</option>
-                                <option value="7">RT 05 / RW 02 — Desa Padaasih, Kec. Cibogo</option>
-                            </optgroup>
-                            <optgroup label="Desa Cisaga">
-                                <option value="8">RT 01 / RW 01 — Desa Cisaga, Kec. Cibogo</option>
-                                <option value="9">RT 03 / RW 02 — Desa Cisaga, Kec. Cibogo</option>
-                            </optgroup>
-                            <optgroup label="Desa Majasari">
-                                <option value="10">RT 02 / RW 01 — Desa Majasari, Kec. Cibogo</option>
-                                <option value="11">RT 04 / RW 02 — Desa Majasari, Kec. Cibogo</option>
-                            </optgroup>
-                            <optgroup label="Desa Sadawarna">
-                                <option value="12">RT 01 / RW 01 — Desa Sadawarna, Kec. Cibogo</option>
-                                <option value="13">RT 02 / RW 02 — Desa Sadawarna, Kec. Cibogo</option>
-                            </optgroup>
-                        @endif
-                    </select>
-                    @error('wilayah_id') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
+                <!-- Dropdown Wilayah Bertingkat (Pemerintah) -->
+                <div class="space-y-3 pt-1">
+                    <label class="block text-xs font-bold text-[#214332]">Wilayah Domisili</label>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Dropdown Provinsi -->
+                        <div>
+                            <select wire:model.live="province_code" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm text-gray-700">
+                                <option value="">-- Pilih Provinsi --</option>
+                                @foreach($this->provinces as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                            @error('province_code') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Dropdown Kabupaten / Kota -->
+                        <div>
+                            <select wire:model.live="city_code" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm text-gray-700 disabled:bg-gray-100 disabled:cursor-not-allowed" {{ empty($cities) ? 'disabled' : '' }}>
+                                <option value="">-- Pilih Kab / Kota --</option>
+                                @foreach($cities as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                            @error('city_code') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Dropdown Kecamatan -->
+                        <div>
+                            <select wire:model.live="district_code" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm text-gray-700 disabled:bg-gray-100 disabled:cursor-not-allowed" {{ empty($districts) ? 'disabled' : '' }}>
+                                <option value="">-- Pilih Kecamatan --</option>
+                                @foreach($districts as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                            @error('district_code') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Dropdown Desa / Kelurahan -->
+                        <div>
+                            <select wire:model="village_code" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm text-gray-700 disabled:bg-gray-100 disabled:cursor-not-allowed" {{ empty($villages) ? 'disabled' : '' }}>
+                                <option value="">-- Pilih Desa / Kelurahan --</option>
+                                @foreach($villages as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                            @error('village_code') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Input Upload Berkas Dokumen khusus Petani & Koordinator -->
@@ -116,7 +129,7 @@
                             Upload Dokumen Verifikasi 
                             <span class="text-red-500">*</span>
                             <span class="font-normal text-gray-500">
-                                ({{ $peran === 'petani' ? 'KTP + Foto Lahan' : 'KTP + Surat RT' }})
+                                ({{ $peran === 'petani' ? 'KTP + Foto Lahan' : 'KTP + Surat Tugas/Domisili' }})
                             </span>
                         </label>
                         <input type="file" wire:model="dokumen" accept=".pdf,.png,.jpg,.jpeg" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#214332]/10 file:text-[#214332] hover:file:bg-[#214332]/20">
@@ -129,19 +142,22 @@
                     </div>
                 @endif
 
+                <!-- Kata Sandi -->
                 <div>
                     <label class="block text-xs font-bold text-[#214332] mb-1">Kata Sandi</label>
                     <input wire:model="password" type="password" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm focus:ring-2 focus:ring-[#214332] focus:border-[#214332] outline-none shadow-sm">
                     @error('password') <span class="mt-1 block text-xs text-red-600 font-medium">{{ $message }}</span> @enderror
                 </div>
 
+                <!-- Persetujuan Layanan -->
                 <div class="flex items-start space-x-2 pt-1">
-                    <input type="checkbox" id="terms" class="mt-0.5 rounded border-gray-300 text-[#214332] focus:ring-[#214332]">
+                    <input type="checkbox" id="terms" required class="mt-0.5 rounded border-gray-300 text-[#214332] focus:ring-[#214332]">
                     <label for="terms" class="text-xs text-gray-500 leading-tight cursor-pointer">
                         Saya menyetujui Syarat Layanan dan Kebijakan Privasi PanenKeluarga
                     </label>
                 </div>
 
+                <!-- Tombol Submit -->
                 <button type="submit" wire:loading.attr="disabled" class="w-full py-3.5 bg-[#538253] hover:bg-[#436a43] disabled:opacity-50 text-white font-medium rounded-xl shadow-sm transition text-sm flex items-center justify-center space-x-2">
                     <span wire:loading.remove wire:target="register">Buat Akun</span>
                     <span wire:loading wire:target="register" class="flex items-center space-x-2">

@@ -1,46 +1,68 @@
-<div>
-    {{-- Header Slot --}}
+<div class="space-y-6">
     <x-slot:header>
-        Ada apa saja di RT {{ auth()->user()->wilayah?->nama_rt }} / RW {{ auth()->user()->wilayah?->nama_rw }} hari ini?
+        Ada apa saja di Desa {{ auth()->user()->wilayah?->kelurahan ?? auth()->user()->village?->name ?? 'Anda' }} hari ini?
     </x-slot:header>
 
     <x-slot:subheader>
-        Selamat siang, {{ explode(' ', auth()->user()->name)[0] }} 👋
+        Selamat siang, {{ explode(' ', auth()->user()->name ?? 'User')[0] }} 👋
     </x-slot:subheader>
 
-    {{-- Input Pencarian --}}
+    <div class="rounded-3xl bg-[#214332] px-6 py-5 text-white shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <p class="text-xs uppercase tracking-[0.18em] text-emerald-200/80">PanenKeluarga</p>
+                <h2 class="mt-2 font-serif text-2xl font-semibold">Beli kebutuhan rumah tangga langsung dari petani.</h2>
+            </div>
+            <a href="{{ route('katalog') }}" wire:navigate class="pk-btn-secondary bg-white text-[#214332] hover:bg-[#eef3ee]">Jelajahi katalog</a>
+        </div>
+    </div>
+
     <div class="mb-6">
-        <input type="text" 
+        <input type="text"
                placeholder="Cari sayur, buah, atau protein segar..."
-               class="pk-input max-w-xl cursor-pointer" 
-               onclick="window.location='{{ route('katalog') }}'" 
+               class="pk-input max-w-2xl cursor-pointer"
+               onclick="window.location='{{ route('katalog') }}'"
                readonly>
     </div>
 
-    {{-- Judul Section --}}
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="font-serif text-lg font-bold">Group Buying Aktif di Wilayah Anda</h2>
-        <a href="{{ route('katalog') }}" wire:navigate class="text-sm font-semibold text-pk-green">Lihat semua →</a>
+    <div class="grid gap-4 md:grid-cols-3">
+        <div class="pk-stat">
+            <p class="text-sm text-gray-500">Sesi aktif</p>
+            <p class="pk-stat-value">{{ $sesiAktif->count() }}</p>
+        </div>
+        <div class="pk-stat">
+            <p class="text-sm text-gray-500">Surplus bulanan</p>
+            <p class="pk-stat-value">Rp{{ number_format($totalSubsidiBulanIni ?? 0, 0, ',', '.') }}</p>
+        </div>
+        <div class="pk-stat">
+            <p class="text-sm text-gray-500">Desa Anda</p>
+            <p class="pk-stat-value">Desa {{ auth()->user()->wilayah?->kelurahan ?? auth()->user()->village?->name ?? '-' }}</p>
+        </div>
     </div>
 
-    {{-- Grid Sesi Group Buying --}}
+    <div class="flex items-center justify-between mb-4 pt-2">
+        <h2 class="font-serif text-2xl font-semibold">Group Buying Aktif</h2>
+        <a href="{{ route('katalog') }}" wire:navigate class="text-sm font-semibold text-[#538253]">Lihat semua →</a>
+    </div>
+
     <div class="grid md:grid-cols-3 gap-5 mb-8">
         @forelse ($sesiAktif as $sesi)
             <livewire:komponen.kartu-sesi :sesi="$sesi" :key="$sesi->id" />
         @empty
-            <p class="text-gray-500 col-span-3">Belum ada sesi group buying aktif di wilayah Anda.</p>
+            <div class="pk-card col-span-3 p-6 text-gray-500">Belum ada sesi group buying aktif saat ini.</div>
         @endforelse
     </div>
 
-    {{-- Kartu Subsidi Nutrisi --}}
-    <div class="pk-card bg-pk-orange/10 border border-pk-orange/30 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-pk-orange flex items-center justify-center text-white">🌱</div>
-            <div>
-                <p class="font-semibold">Program Subsidi Nutrisi Anak</p>
-                <p class="text-sm text-gray-600">Rp{{ number_format($totalSubsidiBulanIni, 0, ',', '.') }} tersalurkan bulan ini</p>
+    <div class="pk-card bg-[#fff2ee] border-[#f3d7ce] p-5">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e07a5f] text-2xl text-white">🌱</div>
+                <div>
+                    <p class="font-semibold text-[#214332]">Program Subsidi Nutrisi Anak</p>
+                    <p class="text-sm text-gray-600">Rp{{ number_format($totalSubsidiBulanIni ?? 0, 0, ',', '.') }} tersalurkan bulan ini</p>
+                </div>
             </div>
+            <a href="{{ route('subsidi.transparansi') }}" wire:navigate class="pk-btn-secondary">Lihat Transparansi</a>
         </div>
-        <a href="{{ route('subsidi.transparansi') }}" wire:navigate class="pk-btn-secondary">Lihat Transparansi</a>
     </div>
 </div>

@@ -6,7 +6,6 @@ use App\Models\PesertaSesi;
 use App\Models\Produk;
 use App\Models\Transaksi;
 use App\Models\Ulasan;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Throwable;
@@ -18,7 +17,7 @@ class Dashboard extends Component
     {
         $petaniId = auth()->id();
 
-        // 1. Total Produk Aktif (dengan info minggu ini)
+        // 1. Total Produk Aktif
         try {
             $produkAktif = Produk::where('petani_id', $petaniId)
                 ->where('status', 'aktif')
@@ -33,22 +32,22 @@ class Dashboard extends Component
             $produkAktifMingguIni = 0;
         }
 
-        // 2. Pesanan Masuk (menunggu kuota)
+        // 2. Pesanan Masuk
         try {
             $pesananMasuk = PesertaSesi::whereHas('sesi.produk', fn ($q) => $q->where('petani_id', $petaniId))
-                ->whereIn('status', ['menunggu', 'dikonfirmasi'])
+                ->whereIn('status', ['menunggu', 'dikonfirmasi', 'menunggu_kuota'])
                 ->count();
             
             $pesananMenungguKuota = PesertaSesi::whereHas('sesi.produk', fn ($q) => $q->where('petani_id', $petaniId))
                 ->whereHas('sesi', fn ($q) => $q->where('status', 'berjalan'))
-                ->where('status', 'menunggu')
+                ->whereIn('status', ['menunggu', 'menunggu_kuota'])
                 ->count();
         } catch (Throwable $e) {
             $pesananMasuk = 0;
             $pesananMenungguKuota = 0;
         }
 
-        // 3. Pendapatan Bulan Ini (dengan perbandingan bulan lalu)
+        // 3. Pendapatan Bulan Ini
         try {
             $pendapatanBulanIni = Transaksi::whereHas('pesertaSesi.sesi.produk', fn ($q) => $q->where('petani_id', $petaniId))
                 ->where('status_pembayaran', 'lunas')
@@ -85,9 +84,9 @@ class Dashboard extends Component
             $jumlahUlasan = 0;
         }
 
-        // 5. Pesanan Terbaru dengan detail sesi
+        // 5. Pesanan Terbaru
         try {
-            $pesananTerbaru = PesertaSesi::with(['sesi.produk', 'konsumen'])
+            $pesananTerbaru = PesertaSesi::with(['sesi.produk', 'sesi.peserta', 'konsumen'])
                 ->whereHas('sesi.produk', fn ($q) => $q->where('petani_id', $petaniId))
                 ->latest()
                 ->take(5)
@@ -101,15 +100,19 @@ class Dashboard extends Component
             $pendapatan7Hari = [];
             for ($i = 6; $i >= 0; $i--) {
                 $tanggal = now()->subDays($i);
+                
+                // Mengambil transaksi lunas sesuai tanggal terkait
                 $totalHari = Transaksi::whereHas('pesertaSesi.sesi.produk', fn ($q) => $q->where('petani_id', $petaniId))
                     ->where('status_pembayaran', 'lunas')
                     ->whereDate('created_at', $tanggal->toDateString())
                     ->sum('jumlah_bayar') ?? 0;
                 
-                $pendapatan7Hari[$tanggal->format('D')] = $totalHari;
+                $pendapatan7Hari[$tanggal->format('D')] = (float) $totalHari;
             }
         } catch (Throwable $e) {
-            $pendapatan7Hari = [];
+            $pendapatan7Hari = [
+                'Thu' => 0, 'Fri' => 0, 'Sat' => 0, 'Sun' => 0, 'Mon' => 0, 'Tue' => 0, 'Wed' => 0
+            ];
         }
 
         return view('livewire.petani.dashboard', compact(

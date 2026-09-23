@@ -12,12 +12,31 @@ class SesiIndex extends Component
 {
     use WithPagination;
 
+    // Filter status tab: 'semua', 'berjalan', 'selesai'
+    public $filterStatus = 'semua';
+
+    public function filterByStatus($status)
+    {
+        $this->filterStatus = $status;
+        $this->resetPage();
+    }
+
+    public function kelola($id)
+    {
+        return redirect()->to('/koordinator/sesi/' . $id);
+    }
+
     public function render()
     {
-        $sesi = SesiGroupBuying::with(['produk.petani'])
-            ->where('koordinator_id', auth()->id())
-            ->latest()
-            ->paginate(10);
+        $query = SesiGroupBuying::with(['produk.petani'])
+            ->withCount(['peserta']) // Menghitung total data peserta/transaksi secara aman
+            ->where('koordinator_id', auth()->id());
+
+        if ($this->filterStatus !== 'semua') {
+            $query->where('status', $this->filterStatus);
+        }
+
+        $sesi = $query->latest()->paginate(10);
 
         return view('livewire.koordinator.sesi-index', [
             'sesi' => $sesi

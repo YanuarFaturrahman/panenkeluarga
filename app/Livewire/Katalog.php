@@ -25,21 +25,45 @@ class Katalog extends Component
     public function render()
     {
         try {
-            $sesi = SesiGroupBuying::with(['produk' => function ($q) {
-                    $q->with('petani');
-                }, 'wilayah'])
-                // Cek status sesi (gunakan orWhere jika status di DB bernama 'aktif' atau 'open')
-                ->whereIn('status', ['berjalan', 'aktif', 'open'])
+            $user = auth()->user();
+            
+            // Kode wilayah user (Konsumen kscibogo = "3213172002")
+            $kodeWilayahUser = $user->village_code ?? $user->wilayah_id ?? null;
+
+            $sesi = SesiGroupBuying::with(['produk'])
+                // 1. Filter Status Sesi
+                ->whereIn(\DB::raw('LOWER(status)'), ['berjalan', 'aktif', 'open'])
+
+                // 2. Filter Wilayah Langsung dari Kolom wilayah_id / village_code di Sesi & User
+                ->when($kodeWilayahUser, function ($query) use ($kodeWilayahUser) {
+                    $query->where(function ($q) use ($kodeWilayahUser) {
+                        // Cocokkan langsung dengan wilayah_id pada tabel sesi_group_buying
+                        $q->where('wilayah_id', $kodeWilayahUser)
+                          ->orWhere('wilayah_id', (int)$kodeWilayahUser)
+                          // Jika ada relasi produk
+                          ->orWhereHas('produk', function ($qp) use ($kodeWilayahUser) {
+                              $qp->whereHas('petani', function ($qpetani) use ($kodeWilayahUser) {
+                                  $qpetani->where('village_code', $kodeWilayahUser)
+                                          ->orWhere('wilayah_id', $kodeWilayahUser);
+                              });
+                          });
+                    });
+                })
+
+                // 3. Filter Pencarian & Kategori Produk
                 ->whereHas('produk', function ($q) {
-                    $q->when($this->cari, fn ($qq) => $qq->where('nama_komoditas', 'like', "%{$this->cari}%"))
-                      ->when($this->kategori, fn ($qq) => $qq->where('kategori', $this->kategori));
+                    $q->when($this->cari, fn ($qq) => $qq->where(function ($sub) {
+                        $sub->where('nama_komoditas', 'like', "%{$this->cari}%")
+                            ->orWhere('nama', 'like', "%{$this->cari}%");
+                    }))
+                    ->when($this->kategori, fn ($qq) => $qq->where('kategori', $this->kategori));
                 })
                 ->latest()
                 ->paginate(9);
+
         } catch (\Throwable $e) {
-            // Log error untuk mempermudah debugging jika ada issue DB
             \Illuminate\Support\Facades\Log::error('Error Katalog: ' . $e->getMessage());
-            $sesi = SesiGroupBuying::paginate(9); // Fallback paginator kosong agar tidak error di $sesi->links()
+            $sesi = SesiGroupBuying::whereRaw('1 = 0')->paginate(9);
         }
 
         return view('livewire.katalog', ['sesi' => $sesi])->title('Katalog Produk — PanenKeluarga');

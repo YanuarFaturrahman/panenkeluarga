@@ -24,7 +24,8 @@ class Verifikasi extends Component
 
     public function render()
     {
-        $users = User::with('wilayah')
+        // Menggunakan relasi 'village' dari Laravolt beserta eager loading district, city, dan province
+        $users = User::with(['village.district.city.province'])
             ->whereIn('peran', ['petani', 'koordinator'])
             ->where('status_verifikasi', $this->tab)
             ->latest()

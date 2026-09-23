@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <x-slot:header>
-        Ada apa saja di RT {{ auth()->user()->wilayah?->nama_rt ?? '-' }} / RW {{ auth()->user()->wilayah?->nama_rw ?? '-' }} hari ini?
+        Ada apa saja di Desa {{ auth()->user()->village?->name ?? 'Anda' }} hari ini?
     </x-slot:header>
 
     <x-slot:subheader>
@@ -36,7 +36,7 @@
         </div>
         <div class="pk-stat">
             <p class="text-sm text-gray-500">Wilayah Anda</p>
-            <p class="pk-stat-value">RT {{ auth()->user()->wilayah?->nama_rt ?? '-' }}</p>
+            <p class="pk-stat-value">Desa {{ auth()->user()->village?->name ?? '-' }}</p>
         </div>
     </div>
 

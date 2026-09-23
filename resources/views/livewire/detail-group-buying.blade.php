@@ -1,5 +1,8 @@
 <x-slot:header>{{ $sesi->produk->nama_komoditas }}</x-slot:header>
-<x-slot:subheader>{{ $sesi->produk->petani->name }} · {{ $sesi->wilayah->nama_lengkap }}</x-slot:subheader>
+<x-slot:subheader>
+    {{ $sesi->produk->petani->name ?? $sesi->koordinator->name ?? 'Petani' }} · 
+    {{ $sesi->wilayah?->nama_lengkap ?? $sesi->wilayah?->name ?? $sesi->wilayah?->nama ?? 'Wilayah' }}
+</x-slot:subheader>
 
 <div wire:poll.5s class="grid lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
@@ -8,17 +11,23 @@
             <p class="text-gray-600">{{ $sesi->produk->deskripsi }}</p>
 
             <div class="mt-5">
+                @php
+                    $jumlahKeluarga = $sesi->peserta->count();
+                    $targetKeluarga = $sesi->kuota_minimum > 0 ? $sesi->kuota_minimum : 1;
+                    $persentaseKeluarga = min(100, round(($jumlahKeluarga / $targetKeluarga) * 100));
+                @endphp
                 <div class="flex justify-between text-sm mb-1">
-                    <span class="font-semibold">Progres Kuota</span>
-                    <span>{{ $sesi->jumlah_terkumpul }} / {{ $sesi->kuota_minimum }} keluarga ({{ $sesi->persentase_kuota }}%)</span>
+                    <span class="font-semibold">Progres Kuota Peserta</span>
+                    <span>{{ $jumlahKeluarga }} / {{ $sesi->kuota_minimum }} keluarga ({{ $persentaseKeluarga }}%)</span>
                 </div>
                 <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
-                    <div class="h-full bg-pk-green transition-all" style="width: {{ $sesi->persentase_kuota }}%"></div>
+                    <div class="h-full bg-pk-green transition-all" style="width: {{ $persentaseKeluarga }}%"></div>
                 </div>
             </div>
 
             <div class="mt-4 flex flex-wrap gap-3 text-sm">
                 <span class="pk-badge bg-pk-orange/15 text-pk-orange">⏰ {{ $sesi->sisa_waktu }}</span>
+                <span class="pk-badge bg-emerald-100 text-emerald-800">📦 Sisa Stok: {{ $sesi->stok_sisa }} {{ $sesi->produk->satuan }}</span>
                 <span class="pk-badge
                     @class([
                         'bg-blue-100 text-blue-700' => $sesi->status === 'berjalan',
@@ -55,16 +64,30 @@
             <p class="text-center text-pk-green font-semibold py-6">✓ Anda sudah bergabung di sesi ini</p>
         @elseif ($sesi->status !== 'berjalan')
             <p class="text-center text-gray-500 py-6">Sesi ini sudah tidak menerima peserta baru.</p>
+        @elseif ($sesi->stok_sisa <= 0)
+            <p class="text-center text-red-500 font-semibold py-6">Maaf, stok komoditas telah habis.</p>
         @else
+            @php
+                $maxBatasInView = min(20, $sesi->stok_sisa);
+            @endphp
             <form wire:submit="gabungGroupBuying" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold mb-1">Jumlah Pesanan ({{ $sesi->produk->satuan }})</label>
-                    <input type="number" min="1" max="20" wire:model="jumlahPesanan" class="pk-input">
-                    @error('jumlahPesanan') <span class="pk-error">{{ $message }}</span> @enderror
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-semibold">Jumlah Pesanan ({{ $sesi->produk->satuan }})</label>
+                        <span class="text-xs text-gray-500">Maks. {{ $maxBatasInView }}</span>
+                    </div>
+                    <input 
+                        type="number" 
+                        min="1" 
+                        max="{{ $maxBatasInView }}" 
+                        wire:model.live="jumlahPesanan" 
+                        class="pk-input"
+                    >
+                    @error('jumlahPesanan') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                 </div>
                 <div class="flex justify-between text-sm border-t pt-3">
                     <span class="text-gray-500">Subtotal</span>
-                    <span class="font-bold">Rp{{ number_format($jumlahPesanan * $sesi->harga_satuan, 0, ',', '.') }}</span>
+                    <span class="font-bold">Rp{{ number_format(($jumlahPesanan ?: 1) * $sesi->harga_satuan, 0, ',', '.') }}</span>
                 </div>
                 <button type="submit" class="pk-btn-primary w-full" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="gabungGroupBuying">Gabung Group Buying</span>

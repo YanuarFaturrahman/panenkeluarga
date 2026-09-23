@@ -97,10 +97,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', Koordinator\Dashboard::class)->name('dashboard');
         
         // Halaman Utama Sesi Group Buying (Menampilkan Form Buka Sesi & Daftar Sesi)
-        Route::get('/sesi', Koordinator\BukaSesi::class)->name('sesi.index');
+        Route::get('/sesi', Koordinator\SesiIndex::class)->name('sesi.index');
         
-        // Alias route 'sesi.buka' agar tombol/link lama di dashboard tidak error
+        // Alias route 'sesi.buka'
         Route::get('/sesi/buka', Koordinator\BukaSesi::class)->name('sesi.buka');
+        
+        // ROUTE KELOLA DETAIL SESI (Menghubungkan tombol "Kelola" ke DetailSesi)
+        Route::get('/sesi/{sesi}', Koordinator\DetailSesi::class)->name('sesi.show');
         
         Route::get('/titik-pengambilan', Koordinator\TitikIndex::class)->name('titik.index');
         Route::get('/peserta', Koordinator\Peserta::class)->name('peserta');

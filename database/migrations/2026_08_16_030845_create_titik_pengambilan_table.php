@@ -10,7 +10,11 @@ return new class extends Migration
     {
         Schema::create('titik_pengambilan', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('wilayah_id')->constrained('wilayah')->cascadeOnDelete();
+            
+            // Menggunakan string(10) untuk menyimpan kode desa dari Laravolt Indonesia
+            $table->string('wilayah_id', 10);
+            $table->foreign('wilayah_id')->references('code')->on('indonesia_villages')->cascadeOnDelete();
+
             $table->foreignId('koordinator_id')->constrained('users')->cascadeOnDelete();
             $table->string('nama_lokasi');
             $table->string('alamat');

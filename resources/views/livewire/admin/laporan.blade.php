@@ -14,19 +14,20 @@
         <h2 class="text-base font-bold text-gray-900">Periode Laporan</h2>
         
         <div class="flex items-center gap-3">
-            <select wire:model.live="bulanPilihan" class="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-gray-700 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
-                <option value="2026-08">Agustus 2026</option>
-                <option value="2026-07">Juli 2026</option>
-                <option value="2026-06">Juni 2026</option>
+            {{-- Dropdown Periode Dinamis --}}
+            <select wire:model.live="bulanPilihan" class="text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-gray-700 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer">
+                @foreach ($opsiBulan as $option)
+                    <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                @endforeach
             </select>
 
-            <button wire:click="eksporPdf" wire:loading.attr="disabled" class="flex items-center gap-1.5 text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2 rounded-xl text-gray-700 transition disabled:opacity-50">
+            <button wire:click="eksporPdf" wire:loading.attr="disabled" class="flex items-center gap-1.5 text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2 rounded-xl text-gray-700 transition disabled:opacity-50 cursor-pointer">
                 <svg wire:loading.remove wire:target="eksporPdf" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 <span wire:loading wire:target="eksporPdf">Memproses...</span>
                 <span wire:loading.remove wire:target="eksporPdf">Ekspor PDF</span>
             </button>
 
-            <button wire:click="eksporExcel" wire:loading.attr="disabled" class="flex items-center gap-1.5 text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2 rounded-xl text-gray-700 transition disabled:opacity-50">
+            <button wire:click="eksporExcel" wire:loading.attr="disabled" class="flex items-center gap-1.5 text-xs font-semibold bg-gray-50 hover:bg-gray-100 border border-gray-200 px-4 py-2 rounded-xl text-gray-700 transition disabled:opacity-50 cursor-pointer">
                 <svg wire:loading.remove wire:target="eksporExcel" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 <span wire:loading wire:target="eksporExcel">Memproses...</span>
                 <span wire:loading.remove wire:target="eksporExcel">Ekspor Excel</span>
@@ -37,27 +38,16 @@
     <!-- Section Middle: Pertumbuhan Transaksi & Ringkasan Bulan Ini -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
-        <!-- Kiri: Grafik Pertumbuhan Transaksi & GMV -->
+        <!-- Kiri: Grafik Chart.js Interaktif -->
         <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between">
-            <h2 class="text-base font-bold text-gray-900 mb-6">Pertumbuhan Transaksi & GMV</h2>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-bold text-gray-900">Pertumbuhan Transaksi & GMV</h2>
+                <span class="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded-lg">6 Bulan Terakhir</span>
+            </div>
 
-            <div class="relative h-44 flex items-end justify-between px-4 pb-2 border-b border-gray-100">
-                <svg class="absolute inset-0 w-full h-full p-4 overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 100">
-                    <path d="M 30,80 Q 110,65 190,60 T 350,40 T 470,15" fill="none" stroke="#047857" stroke-width="3" stroke-linecap="round"/>
-                    <circle cx="30" cy="80" r="4" fill="#047857" />
-                    <circle cx="120" cy="68" r="4" fill="#047857" />
-                    <circle cx="210" cy="58" r="4" fill="#047857" />
-                    <circle cx="300" cy="48" r="4" fill="#047857" />
-                    <circle cx="390" cy="35" r="4" fill="#047857" />
-                    <circle cx="470" cy="15" r="4" fill="#047857" />
-                </svg>
-
-                <!-- Data Dinamis dari Database -->
-                @foreach ($grafikData as $data)
-                    <span class="text-xs {{ $loop->last ? 'font-bold text-gray-700' : 'text-gray-500' }} z-10">
-                        {{ $data['bulan'] }}
-                    </span>
-                @endforeach
+            <!-- Canvas Chart dengan wire:ignore agar DOM Canvas tidak hancur saat Livewire update -->
+            <div class="relative w-full h-56" wire:ignore>
+                <canvas id="gmvChart"></canvas>
             </div>
         </div>
 
@@ -100,26 +90,20 @@
                         <th class="pb-3 font-semibold">Wilayah</th>
                         <th class="pb-3 font-semibold">Sesi Group Buying</th>
                         <th class="pb-3 font-semibold">Peserta</th>
-                        <th class="pb-3 font-semibold">GMV</th>
-                        <th class="pb-3 font-semibold text-right">Pertumbuhan</th>
+                        <th class="pb-3 font-semibold text-right">GMV</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                    @forelse ($kinerjaWilayah ?? [] as $item)
+                    @forelse ($kinerjaWilayah as $item)
                         <tr class="hover:bg-gray-50/50">
                             <td class="py-4 font-bold text-gray-800">{{ $item['nama'] }}</td>
                             <td class="py-4 text-gray-600">{{ $item['sesi'] }} sesi</td>
                             <td class="py-4 text-gray-600">{{ $item['peserta'] }} keluarga</td>
-                            <td class="py-4 font-bold text-gray-900">Rp{{ number_format($item['gmv'], 0, ',', '.') }}</td>
-                            <td class="py-4 text-right">
-                                <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
-                                    {{ $item['pertumbuhan'] }}
-                                </span>
-                            </td>
+                            <td class="py-4 font-bold text-gray-900 text-right">Rp{{ number_format($item['gmv'], 0, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-8 text-center text-gray-400">Belum ada data kinerja wilayah.</td>
+                            <td colspan="4" class="py-8 text-center text-gray-400">Belum ada data kinerja wilayah untuk periode ini.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -127,3 +111,89 @@
         </div>
     </div>
 </div>
+
+<!-- Script Chart.js CDN & Inisialisasi -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('gmvChart').getContext('2d');
+        
+        // Buat Gradient Fill untuk Efek Area Chart yang Cantik
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(4, 120, 87, 0.25)'); // Emerald-700 transparan
+        gradient.addColorStop(1, 'rgba(4, 120, 87, 0.0)');
+
+        let grafikData = @json($grafikData);
+
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: grafikData.map(item => item.bulan),
+                datasets: [{
+                    label: 'Total GMV',
+                    data: grafikData.map(item => item.gmv),
+                    borderColor: '#047857', // Emerald-700
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35, // Smooth Curve
+                    pointBackgroundColor: '#047857',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#064e3b',
+                        titleFont: { size: 12, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                let val = context.raw || 0;
+                                return 'GMV: Rp ' + new Intl.NumberFormat('id-ID').format(val);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 10 },
+                            color: '#9ca3af',
+                            callback: function(value) {
+                                if (value >= 1000000) return 'Rp ' + (value/1000000) + 'jt';
+                                if (value >= 1000) return 'Rp ' + (value/1000) + 'rb';
+                                return 'Rp ' + value;
+                            }
+                        },
+                        grid: { color: '#f3f4f6' }
+                    },
+                    x: {
+                        ticks: { font: { size: 11 }, color: '#4b5563' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Event listener saat ada pembaruan dari Livewire
+        Livewire.on('updateChart', (data) => {
+            if (chart) {
+                chart.data.labels = data[0].map(item => item.bulan);
+                chart.data.datasets[0].data = data[0].map(item => item.gmv);
+                chart.update();
+            }
+        });
+    });
+</script>

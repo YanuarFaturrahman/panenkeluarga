@@ -9,7 +9,7 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Nama Komoditas</label>
-                    <input type="text" wire:model.live.debounce.150ms="nama_komoditas" class="pk-input" placeholder="Contoh: Telur Ayam Kampung">
+                    <input type="text" wire:model.live.debounce.150ms="nama_komoditas" class="pk-input" placeholder="Contoh: Beras Organik / Telur Ayam Kampung">
                     @error('nama_komoditas') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                 </div>
 
@@ -20,6 +20,7 @@
                             <option value="sayur">Sayur</option>
                             <option value="buah">Buah</option>
                             <option value="protein">Protein</option>
+                            <option value="karbohidrat">Karbohidrat</option>
                         </select>
                         @error('kategori') <span class="text-red-500 text-xs block mt-1">{{ $message }}</span> @enderror
                     </div>
@@ -88,7 +89,7 @@
             </div>
         </div>
 
-        {{-- Kartu Pratinjau Produk Realtime (Versi Safe-Render) --}}
+        {{-- Kartu Pratinjau Produk Realtime --}}
         <div class="pk-card h-fit">
             <p class="font-semibold mb-3">Pratinjau Kartu Produk</p>
             <div class="rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white">
@@ -112,6 +113,8 @@
                             🍅
                         @elseif(($kategori ?? '') === 'protein')
                             🥚
+                        @elseif(($kategori ?? '') === 'karbohidrat')
+                            🌾
                         @else
                             🥬
                         @endif

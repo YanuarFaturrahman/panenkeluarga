@@ -4,50 +4,52 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin PanenKeluarga',
-            'email' => 'admin@panenkeluarga.id',
-            'password' => Hash::make('password'),
-            'peran' => 'admin',
-            'nomor_hp' => '081200000000',
-            'wilayah_id' => null,
-            'status_verifikasi' => 'terverifikasi',
-        ]);
+        $villageCode = DB::table('indonesia_villages')->value('code') ?? '3204050001';
 
-        User::create([
-            'name' => 'Pak Slamet',
-            'email' => 'petani@panenkeluarga.id',
-            'password' => Hash::make('password'),
-            'peran' => 'petani',
-            'nomor_hp' => '081211111111',
-            'wilayah_id' => 1,
-            'status_verifikasi' => 'terverifikasi',
-        ]);
+        // 1. Akun Admin
+        User::updateOrCreate(
+            ['email' => 'admin@panenkeluarga.id'],
+            [
+                'name'              => 'Admin PanenKeluarga',
+                'password'          => Hash::make('password'),
+                'peran'             => 'admin',
+                'nomor_hp'          => '081200000000',
+                'village_code'      => null,
+                'status_verifikasi' => 'terverifikasi',
+            ]
+        );
 
-        User::create([
-            'name' => 'Bu Wulandari',
-            'email' => 'koordinator@panenkeluarga.id',
-            'password' => Hash::make('password'),
-            'peran' => 'koordinator',
-            'nomor_hp' => '081222222222',
-            'wilayah_id' => 1,
-            'status_verifikasi' => 'terverifikasi',
-        ]);
+        // 2. Akun Petani (Dibutuhkan oleh ProdukSeeder)
+        User::updateOrCreate(
+            ['email' => 'petani@panenkeluarga.id'],
+            [
+                'name'              => 'Petani Utama',
+                'password'          => Hash::make('password'),
+                'peran'             => 'petani',
+                'nomor_hp'          => '081200000001',
+                'village_code'      => $villageCode,
+                'status_verifikasi' => 'terverifikasi',
+            ]
+        );
 
-        User::create([
-            'name' => 'Rina Nurhaliza',
-            'email' => 'konsumen@panenkeluarga.id',
-            'password' => Hash::make('password'),
-            'peran' => 'konsumen',
-            'nomor_hp' => '081233333333',
-            'wilayah_id' => 1,
-            'status_verifikasi' => 'terverifikasi',
-        ]);
+        // 3. Akun Koordinator (Dibutuhkan oleh SesiGroupBuyingSeeder)
+        User::updateOrCreate(
+            ['email' => 'koordinator@panenkeluarga.id'],
+            [
+                'name'              => 'Koordinator Utama',
+                'password'          => Hash::make('password'),
+                'peran'             => 'koordinator',
+                'nomor_hp'          => '081200000002',
+                'village_code'      => $villageCode,
+                'status_verifikasi' => 'terverifikasi',
+            ]
+        );
     }
 }

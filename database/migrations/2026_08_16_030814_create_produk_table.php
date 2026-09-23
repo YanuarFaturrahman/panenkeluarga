@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('petani_id')->constrained('users')->cascadeOnDelete();
             $table->string('nama_komoditas');
             $table->enum('kategori', ['sayur', 'buah', 'protein']);
-            $table->string('satuan', 30); // ikat, kg, butir, dsb.
+            $table->string('satuan', 30);
             $table->unsignedInteger('harga');
             $table->unsignedInteger('estimasi_stok');
             $table->date('estimasi_tanggal_panen');

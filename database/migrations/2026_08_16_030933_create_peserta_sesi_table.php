@@ -14,8 +14,10 @@ return new class extends Migration
             $table->foreignId('konsumen_id')->constrained('users')->cascadeOnDelete();
             $table->unsignedInteger('jumlah_pesanan');
             $table->unsignedInteger('subtotal');
-            $table->enum('status', ['menunggu', 'dikonfirmasi', 'siap_diambil', 'diambil', 'dibatalkan'])
-                ->default('menunggu');
+            
+            // Diubah menggunakan string agar tidak dibatasi oleh enum (mencegah error Data Truncated)
+            $table->string('status', 50)->default('menunggu_kuota');
+            
             $table->timestamps();
 
             $table->unique(['sesi_id', 'konsumen_id']); // satu konsumen hanya 1 baris per sesi

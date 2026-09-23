@@ -2,14 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravolt\Indonesia\Models\Village;
 
 class TitikPengambilan extends Model
 {
-    protected $table = 'titik_pengambilan';
-    protected $fillable = ['wilayah_id', 'koordinator_id', 'nama_lokasi', 'alamat', 'jam_operasional'];
+    use HasFactory;
 
-    public function wilayah() { return $this->belongsTo(Wilayah::class); }
-    public function koordinator() { return $this->belongsTo(User::class, 'koordinator_id'); }
-    public function sesiGroupBuying() { return $this->hasMany(SesiGroupBuying::class); }
+    protected $table = 'titik_pengambilan';
+
+    protected $fillable = [
+        'nama_lokasi',
+        'alamat',
+        'jam_operasional',
+        'koordinator_id',
+        'wilayah_id',
+    ];
+
+    public function koordinator()
+    {
+        return $this->belongsTo(User::class, 'koordinator_id');
+    }
+
+    // Relasi ke tabel Desa Laravolt
+    public function village()
+    {
+        return $this->belongsTo(Village::class, 'wilayah_id', 'code');
+    }
 }

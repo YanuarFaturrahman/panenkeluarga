@@ -28,7 +28,7 @@
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
             <p class="text-xs font-medium text-gray-500 mb-1">Anak Penerima Manfaat</p>
             <h3 class="text-2xl font-bold text-gray-900">{{ $penerimaManfaat ?? 0 }}</h3>
-            <p class="text-xs text-gray-400 mt-1">di {{ $totalRW ?? 0 }} RW</p>
+            <p class="text-xs text-gray-400 mt-1">di {{ $totalDesa ?? 0 }} Desa/Kelurahan</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -61,9 +61,11 @@
                         @forelse ($pengajuan as $item)
                             <tr class="hover:bg-gray-50/50">
                                 <td class="py-4 font-bold text-gray-800">
-                                    {{ $item->wilayah?->nama_lengkap ?? 'RT 05 / RW 03 — Kel. Cigadung' }}
+                                    Desa {{ $item->wilayah?->name ?? '-' }}
                                 </td>
-                                <td class="py-4 text-gray-600">Bu Wulandari</td>
+                                <td class="py-4 text-gray-600">
+                                    {{ $item->transaksi?->user?->name ?? 'kcibogo' }}
+                                </td>
                                 <td class="py-4 text-gray-600">{{ $item->jumlah_anak_penerima ?? 0 }} anak</td>
                                 <td class="py-4 font-bold text-gray-900">
                                     Rp{{ number_format($item->jumlah_dialokasikan ?? 0, 0, ',', '.') }}
@@ -71,8 +73,8 @@
                                 <td class="py-4">
                                     @if ($item->status === 'disalurkan' || $item->status === 'disetujui')
                                         <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Disetujui</span>
-                                    @elseif ($item->status === 'diajukan')
-                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Diajukan</span>
+                                    @elseif ($item->status === 'diajukan' || $item->status === 'terkumpul')
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">{{ ucfirst($item->status) }}</span>
                                     @else
                                         <span class="px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">{{ ucfirst($item->status) }}</span>
                                     @endif
@@ -107,7 +109,7 @@
                         @php $percentage = ($row->total_anak / $maxAnak) * 100; @endphp
                         <div>
                             <div class="flex justify-between text-xs font-semibold mb-1.5">
-                                <span class="text-gray-800">{{ $row->wilayah?->nama_lengkap ?? 'RT 05 / RW 03 — Kel. Cigadung' }}</span>
+                                <span class="text-gray-800">Desa {{ $row->wilayah?->name ?? '-' }}</span>
                                 <span class="text-gray-400">{{ $row->total_anak }} anak</span>
                             </div>
                             <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -141,16 +143,35 @@
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between py-2 border-b border-gray-100">
                         <span class="text-gray-500">Wilayah</span>
-                        <span class="font-semibold text-gray-800">{{ $selectedSubsidi->wilayah?->nama_lengkap ?? 'RT 05 / RW 03 — Kel. Cigadung' }}</span>
+                        <span class="font-semibold text-gray-800">Desa {{ $selectedSubsidi->wilayah?->name ?? '-' }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-100">
+                        <span class="text-gray-500">Koordinator</span>
+                        <span class="font-semibold text-gray-800">{{ $selectedSubsidi->transaksi?->user?->name ?? 'kcibogo' }}</span>
                     </div>
                     <div class="flex justify-between py-2 border-b border-gray-100">
                         <span class="text-gray-500">Nominal Alokasi</span>
                         <span class="font-semibold text-gray-900">Rp{{ number_format($selectedSubsidi->jumlah_dialokasikan, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-500">Jumlah Anak Penerima</span>
-                        <span class="font-semibold text-gray-800">{{ $selectedSubsidi->jumlah_anak_penerima ?? 1 }} Anak</span>
+                    
+                    <!-- Input Jumlah Anak Penerima -->
+                    <div class="py-2 border-b border-gray-100">
+                        <label for="jumlahAnakInput" class="block text-xs font-semibold text-gray-600 mb-1">
+                            Jumlah Anak Penerima Manfaat
+                        </label>
+                        <input 
+                            type="number" 
+                            id="jumlahAnakInput" 
+                            wire:model="jumlahAnakInput" 
+                            min="1" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 text-sm font-semibold text-gray-800"
+                            placeholder="Masukkan jumlah anak"
+                        >
+                        @error('jumlahAnakInput')
+                            <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
+                        @enderror
                     </div>
+
                     <div class="flex justify-between py-2 border-b border-gray-100">
                         <span class="text-gray-500">Status</span>
                         <span class="font-semibold text-emerald-600">{{ ucfirst($selectedSubsidi->status) }}</span>
@@ -161,9 +182,14 @@
                     <button wire:click="closeModal" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl">
                         Tutup
                     </button>
+                    
                     @if ($selectedSubsidi->status !== 'disalurkan' && $selectedSubsidi->status !== 'disetujui')
-                        <button wire:click="salurkan({{ $selectedSubsidi->id }}, {{ $selectedSubsidi->jumlah_anak_penerima ?? 1 }})" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl">
+                        <button wire:click="salurkan" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl transition">
                             Proses Disalurkan
+                        </button>
+                    @else
+                        <button wire:click="updateJumlahAnak" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl transition">
+                            Simpan Perubahan
                         </button>
                     @endif
                 </div>

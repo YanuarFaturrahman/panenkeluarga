@@ -17,13 +17,20 @@ class TitikIndex extends Component
     public function simpan(): void
     {
         $data = $this->validate([
-            'nama_lokasi' => ['required', 'string', 'max:255'],
-            'alamat' => ['required', 'string', 'max:255'],
+            'nama_lokasi'     => ['required', 'string', 'max:255'],
+            'alamat'          => ['required', 'string', 'max:255'],
             'jam_operasional' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $data['koordinator_id'] = auth()->id();
-        $data['wilayah_id'] = auth()->user()->wilayah_id;
+        $user = auth()->user();
+
+        if (!$user->village_code) {
+            $this->addError('nama_lokasi', 'Akun Anda belum memiliki kode wilayah desa (village_code).');
+            return;
+        }
+
+        $data['koordinator_id'] = $user->id;
+        $data['wilayah_id']     = $user->village_code;
 
         TitikPengambilan::create($data);
 

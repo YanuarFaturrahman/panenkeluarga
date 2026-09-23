@@ -118,7 +118,6 @@
                 
                 <div class="flex items-center gap-2 md:gap-3 text-gray-500">
                     <livewire:notification-list />
-                    <button class="p-2 hover:bg-gray-100 rounded-full transition">🔍</button>
                 </div>
             </header>
             

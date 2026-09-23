@@ -5,6 +5,7 @@ namespace App\Livewire\Koordinator;
 use App\Models\Produk;
 use App\Models\SesiGroupBuying;
 use App\Models\TitikPengambilan;
+use Illuminate\Support\Facades\Route;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -21,13 +22,24 @@ class BukaSesi extends Component
     public function updatedProdukId($value): void
     {
         $produk = Produk::find($value);
-        $this->harga_satuan = $produk?->harga;
+        $this->harga_satuan = $produk?->harga ?? $produk?->harga_satuan;
     }
 
     #[Computed]
     public function produkList()
     {
-        return Produk::where('status', 'aktif')->get();
+        $user = auth()->user();
+
+        // Filter produk berdasarkan wilayah/desa milik Koordinator
+        return Produk::where('status', 'aktif')
+            ->whereHas('petani', function ($query) use ($user) {
+                if ($user->village_code) {
+                    $query->where('village_code', $user->village_code);
+                } elseif ($user->wilayah_id) {
+                    $query->where('wilayah_id', $user->wilayah_id);
+                }
+            })
+            ->get();
     }
 
     #[Computed]
@@ -42,33 +54,40 @@ class BukaSesi extends Component
             'produk_id' => ['required', 'exists:produk,id'],
             'titik_pengambilan_id' => ['required', 'exists:titik_pengambilan,id'],
             'kuota_minimum' => ['required', 'integer', 'min:1'],
-            'harga_satuan' => ['required', 'integer', 'min:0'],
             'tenggat_waktu' => ['required', 'date', 'after:now'],
         ]);
 
+        // Ambil produk untuk memastikan harga asli dari master data petani
+        $produk = Produk::findOrFail($validated['produk_id']);
+        $hargaAsli = $produk->harga ?? $produk->harga_satuan;
+
         SesiGroupBuying::create([
             'koordinator_id' => auth()->id(),
-            'wilayah_id' => auth()->user()->wilayah_id,
+            'wilayah_id' => auth()->user()->wilayah_id ?? auth()->user()->village_code,
             'produk_id' => $validated['produk_id'],
             'titik_pengambilan_id' => $validated['titik_pengambilan_id'],
             'kuota_minimum' => $validated['kuota_minimum'],
             'jumlah_terkumpul' => 0,
-            'harga_satuan' => $validated['harga_satuan'],
+            'harga_satuan' => $hargaAsli, // Gunakan harga asli dari produk
             'tenggat_waktu' => $validated['tenggat_waktu'],
             'status' => 'berjalan',
         ]);
 
         session()->flash('sukses', 'Sesi group buying berhasil dibuka.');
-        return $this->redirect(route('koordinator.sesi.index'), navigate: true);
+        
+        if (Route::has('koordinator.sesi.index')) {
+            return $this->redirect(route('koordinator.sesi.index'), navigate: true);
+        }
+
+        return $this->redirect('/koordinator/sesi', navigate: true);
     }
 
     public function render()
     {
-        return view('livewire.koordinator.buka-sesi', [
-            'sesi' => SesiGroupBuying::where('koordinator_id', auth()->id())
-                        ->with(['produk.petani', 'titikPengambilan'])
-                        ->latest()
-                        ->get(),
-        ])->title('Buka Sesi Baru — PanenKeluarga');
+        return view('livewire.koordinator.buka-sesi')->layoutData([
+            'title' => 'Buka Sesi Baru — PanenKeluarga',
+            'header' => 'Buka Sesi Group Buying',
+            'subheader' => 'Formulir pembuatan sesi pembelian bersama'
+        ]);
     }
 }

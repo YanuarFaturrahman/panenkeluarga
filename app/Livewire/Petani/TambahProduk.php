@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Petani;
 
-use App\Models\Produk;
+use App\Models\Produk; // <-- PERHATIKAN: Ini yang wajib ada agar Produk::create() bekerja
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -30,7 +30,7 @@ class TambahProduk extends Component
     {
         $this->validate([
             'nama_komoditas' => 'required|string|max:255',
-            'kategori' => 'required|string',
+            'kategori' => 'required|string|in:sayur,buah,protein,karbohidrat',
             'satuan' => 'required|string|max:30',
             'harga' => 'required|numeric|min:0',
             'estimasi_stok' => 'required|numeric|min:0',
@@ -44,13 +44,14 @@ class TambahProduk extends Component
             $pathFoto = $this->foto->store('produk', 'public');
         }
 
+        // Memanggil Model App\Models\Produk
         Produk::create([
             'petani_id' => auth()->id(),
             'nama_komoditas' => $this->nama_komoditas,
             'kategori' => strtolower($this->kategori),
             'satuan' => $this->satuan,
-            'harga' => $this->harga,
-            'estimasi_stok' => $this->estimasi_stok,
+            'harga' => (int) $this->harga,
+            'estimasi_stok' => (int) $this->estimasi_stok,
             'estimasi_tanggal_panen' => $this->estimasi_tanggal_panen,
             'deskripsi' => $this->deskripsi,
             'foto' => $pathFoto,

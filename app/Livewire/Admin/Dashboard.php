@@ -42,11 +42,23 @@ class Dashboard extends Component
         ->whereYear('created_at', now()->year)
         ->count();
 
-        // 2. Total Koordinator
+        // 2. Total Koordinator (Hanya yang terverifikasi)
         $totalKoordinator = User::where(function($q) {
             $q->where('peran', 'like', '%koordinator%')
               ->orWhere('peran', 'like', '%Koordinator%');
-        })->count();
+        })
+        ->whereIn('status_verifikasi', ['terverifikasi', 'disetujui', 'diterima', 'approved'])
+        ->count();
+
+        // Fallback untuk Koordinator jika ada variasi string status
+        if ($totalKoordinator === 0) {
+            $totalKoordinator = User::where(function($q) {
+                $q->where('peran', 'like', '%koordinator%')
+                  ->orWhere('peran', 'like', '%Koordinator%');
+            })
+            ->whereNotIn('status_verifikasi', ['ditolak', 'rejected', 'pending'])
+            ->count();
+        }
         
         try {
             $totalKecamatan = Wilayah::distinct('kecamatan')->count('kecamatan');
