@@ -14,22 +14,23 @@
                 Belanja bersama tetangga, langsung dari petani.
             </h1>
             <p class="text-emerald-100/80 text-sm leading-relaxed">
-                Setiap sesi group buying memangkas rantai tengkulak, menaikkan harga jual petani, dan menyalurkan sebagian surplus untuk gizi anak di RT/RW Anda.
+                Setiap sesi group buying memangkas rantai tengkulak, menaikkan harga jual petani, dan menyalurkan sebagian surplus untuk gizi anak di Desa/Kelurahan Anda.
             </p>
         </div>
 
+        <!-- Statistik Dinamis -->
         <div class="grid grid-cols-3 gap-4 pt-6 border-t border-emerald-800/60 z-10">
             <div>
-                <p class="text-xl font-bold font-serif">1.240+</p>
+                <p class="text-xl font-bold font-serif">{{ number_format($totalKeluarga, 0, ',', '.') }}{{ $totalKeluarga > 0 ? '+' : '' }}</p>
                 <p class="text-[11px] text-emerald-200/70">Keluarga bergabung</p>
             </div>
             <div>
-                <p class="text-xl font-bold font-serif">186</p>
+                <p class="text-xl font-bold font-serif">{{ number_format($totalPetani, 0, ',', '.') }}</p>
                 <p class="text-[11px] text-emerald-200/70">Petani mitra</p>
             </div>
             <div>
-                <p class="text-xl font-bold font-serif">42</p>
-                <p class="text-[11px] text-emerald-200/70">RT/RW aktif</p>
+                <p class="text-xl font-bold font-serif">{{ number_format($totalDesa, 0, ',', '.') }}</p>
+                <p class="text-[11px] text-emerald-200/70">Desa/Kelurahan aktif</p>
             </div>
         </div>
     </div>

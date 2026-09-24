@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -9,7 +10,6 @@ use Livewire\Component;
 #[Layout('layouts.guest')]
 class Login extends Component
 {
-    // Mengubah nama properti menjadi $login agar lebih fleksibel (bisa email atau HP)
     public string $login = ''; 
     public string $password = '';
     public bool $remember = false;
@@ -56,7 +56,22 @@ class Login extends Component
     }
 
     public function render()
-    {
-        return view('livewire.auth.login');
-    }
+{
+    // Hitung total user dengan peran 'konsumen'
+    $totalKeluarga = User::where('peran', 'konsumen')->count();
+
+    // Hitung total petani
+    $totalPetani = User::where('peran', 'petani')->count();
+
+    // Hitung jumlah desa/kelurahan unik berdasarkan village_code
+    $totalDesa = User::whereNotNull('village_code')
+        ->distinct('village_code')
+        ->count('village_code');
+
+    return view('livewire.auth.login', [
+        'totalKeluarga' => $totalKeluarga,
+        'totalPetani'   => $totalPetani,
+        'totalDesa'     => $totalDesa,
+    ]);
+}
 }

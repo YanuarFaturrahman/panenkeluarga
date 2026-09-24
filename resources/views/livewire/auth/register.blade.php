@@ -13,12 +13,8 @@
                 Satu akun, tiga peran yang saling terhubung.
             </h1>
             <p class="text-emerald-100/80 text-sm leading-relaxed">
-                Pilih peran sesuai posisi Anda — platform akan menyesuaikan dashboard dan fitur secara otomatis.
+                Pilih peran sesuai posisi Anda, platform akan menyesuaikan dashboard dan fitur secara otomatis.
             </p>
-        </div>
-
-        <div class="text-xs text-emerald-200/50 z-10">
-            © 2026 PanenKeluarga — Marketplace Agrotech Mikro
         </div>
     </div>
 
